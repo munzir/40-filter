@@ -33,101 +33,56 @@
 !> \file kalman.f90
 !! \brief kalman filter
 !! \author Neil T. Dantam
-  
-Module kalman_filter
+
+Subroutine filter_kalman_predict( n_x, n_u, x, A, B, u, E, R ) 
   Implicit None
-Contains
-  Function kf_matrix_invert( m, n, A ) result(info)
-    Use f77_lapack
-    Use f95_lapack
-    integer, intent(in) :: m,n
-    real(8), intent(inout), dimension(m,n) :: A
-    integer :: info
-
-    integer, dimension(m) :: ipiv  ! lu factor pivots
-    real(8), dimension(1) :: swork !
-        
-    !! LU Factor
-    Call la_getrf(m, n, A, m, ipiv, info)
-    !! invert
-    ! first get optimal work array size
-    Call la_getri( n, A, m, ipiv, swork, -1, info ) 
-    ! now perform the inversion
-    info = really_invert( int( swork(1) ) )
-  Contains
-    Function really_invert( lwork ) result(info)
-      integer, intent(in) :: lwork
-      integer :: info
-      real(8), dimension(lwork) :: work ! work array
-      Call la_getri( n, A, m, ipiv, work, lwork, info )
-    End Function really_invert
-  End Function kf_matrix_invert
-  
-  Subroutine kf_predict( x, E, A, B, u, R )
-    real(8), dimension(:), intent(inout) :: x    ! mean
-    real(8), dimension(:,:), intent(inout) :: E  ! covariance
-    real(8), dimension(:,:), intent(in) :: A     
-    real(8), dimension(:,:), intent(in) :: B
-    real(8), dimension(:,:), intent(in) :: R     ! process noise covariance
-    real(8), dimension(:), intent(in) :: u       ! input
-    ! x = A*x + B*u
-    x = matmul(A,x) + matmul(B,u)
-    ! E = A * E * A**T + R
-    E = matmul( matmul(A,E), transpose(A) ) + R
-  End Subroutine kf_predict
-
-  Function kf_correct( x, E, z, C, Q ) result(info)
-    real(8), dimension(:), intent(inout) :: x    ! mean
-    real(8), dimension(:,:), intent(inout) :: E  ! covariance
-    real(8), dimension(:), intent(in) :: z       ! measurement
-    real(8), dimension(:,:), intent(in) :: C     ! measurement model
-    real(8), dimension(:,:), intent(in) :: Q     ! measurement noise covariance
-    integer :: info
-
-    real(8), dimension( size(x), size(z) ) :: K
-    real(8), dimension( size(x), size(x) ) :: Kp
-    real(8), dimension( size(x), size(x) ) :: Ident
-    integer :: i
-
-    ! K = E * C**T * (C * E * C**T + Q)**-1
-    Kp = matmul( matmul(C, E), transpose(C) ) + Q
-    info = kf_matrix_invert(size(x), size(x), Kp)
-    K = matmul( matmul(E, transpose(C)), Kp )
-
-    ! x = x + K * (z - C*x)
-    x = x + matmul( K, z - matmul(C,x) )
-
-    ! E = (I - K*C) * E 
-    Ident = 0
-    Forall ( i = 1:size(x) )
-       Ident(i,i) = 1
-    End Forall
-    E = matmul( Ident - matmul(K,C), E  )
-    
-  End Function kf_correct
-End Module kalman_filter
-
-Subroutine filter_kalman_predict( x, n_x, E, A, B, u, n_u, R )
-  Use kalman_filter
-  Implicit None
-  real(8), intent(inout), dimension(n_x) :: x
-  real(8), intent(inout), dimension(n_x,n_x) :: E
-  real(8), intent(in), dimension(n_x,n_x) :: A, R
-  real(8), intent(in), dimension(n_x,n_u) :: B
-  real(8), intent(in), dimension(n_u) :: u
-  integer,  intent(in) :: n_x, n_u 
-  Call kf_predict( x, E, A, B, u, R )
+  real(8), intent(inout), dimension(n_x) :: x       ! mean state
+  real(8), intent(inout), dimension(n_x,n_x) :: E   ! covariance
+  real(8), intent(in), dimension(n_x,n_x) :: A, R   ! process/noise model
+  real(8), intent(in), dimension(n_x,n_u) :: B      ! input model
+  real(8), intent(in), dimension(n_u) :: u          ! input
+  integer,  intent(in) :: n_x, n_u                  ! state/input space
+  ! x = A*x + B*u
+  x = matmul(A,x) + matmul(B,u)
+  ! E = A * E * A**T + R
+  E = matmul( matmul(A,E), transpose(A) ) + R
 End Subroutine filter_kalman_predict
 
-Function filter_kalman_correct( x, n_x, E, z, n_z, C, Q ) result(info)
-  Use kalman_filter
+Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
   Implicit None
-  integer, intent(in) :: n_x, n_z
-  real(8), intent(inout), dimension(n_x) :: x
-  real(8), intent(in), dimension(n_z) :: z
-  real(8), intent(inout), dimension(n_x, n_x) :: E
-  real(8), intent(in), dimension(n_z, n_x) :: C
-  real(8), intent(in), dimension(n_z, n_z) :: Q
+  !! interface to inversion function (via lapack) in somatic
+  Interface
+     Function somatic_la_invert( m, n, A ) result(info)
+       integer, intent(in) :: m, n
+       real(8), dimension(m,n), intent(inout) :: A
+       integer :: info
+     End Function somatic_la_invert
+  End Interface
+  integer, intent(in) :: n_x, n_z                  ! state, measurement space
+  real(8), intent(inout), dimension(n_x) :: x      ! state
+  real(8), intent(in), dimension(n_z) :: z         ! measurement
+  real(8), intent(inout), dimension(n_x, n_x) :: E !covariance
+  real(8), intent(in), dimension(n_z, n_x) :: C    ! measurement model
+  real(8), intent(in), dimension(n_z, n_z) :: Q    ! measurement noise
   integer :: info
-  info = kf_correct( x, E, z, C, Q )
+
+  real(8), dimension( n_x, n_z ) :: K
+  real(8), dimension( n_x, n_x ) :: Kp
+  real(8), dimension( n_x, n_x ) :: Ident
+  integer :: i
+
+  ! K = E * C**T * (C * E * C**T + Q)**-1
+  Kp = matmul( matmul(C, E), transpose(C) ) + Q
+  info = somatic_la_invert(n_x, n_x, Kp)
+  K = matmul( matmul(E, transpose(C)), Kp )
+
+  ! x = x + K * (z - C*x)
+  x = x + matmul( K, z - matmul(C,x) )
+
+  ! E = (I - K*C) * E 
+  Ident = 0
+  Forall ( i = 1:n_x )
+     Ident(i,i) = 1
+  End Forall
+  E = matmul( Ident - matmul(K,C), E  )
 End Function filter_kalman_correct

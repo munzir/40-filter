@@ -68,14 +68,17 @@ void filter_fir_n( double *y, filter_fir_t *f, double *x, size_t n ) {
 /*--------*/
 
 // fortran prototype
-void filter_kalman_predict_( double *x, int *n_x, 
-                             double *E, double *A, 
-                             double *B, double *u, int *n_u, 
-                             double *R );
+void filter_kalman_predict_( const int *n_x, const int *n_u,
+                             double *x, const double *A,
+                             const double *B, const double *u,
+                             double *E, const double *R );
 // fortran prototype
-void filter_kalman_correct_( double *x, int *n_x,
-                             double *E, double *z, int *n_z,
-                             double *C, double *Q );
+int filter_kalman_correct_( const int *n_x, const int *n_z,
+                            double *x, const double *C,
+                            const double *z, 
+                            double *E, const double *Q);
+                            
+                           
 
 void filter_kalman_init( filter_kalman_t *kf, size_t n_x, size_t n_u, size_t n_z ) {
     kf->n_x = n_x;
@@ -112,12 +115,17 @@ void filter_kalman_destroy( filter_kalman_t *kf ) {
 void filter_kalman_predict( filter_kalman_t *kf ) {
     int n_x = (int)kf->n_x;
     int n_u = (int)kf->n_u;
-    filter_kalman_predict_( kf->x, &n_x, kf->E, kf->A,
-                            kf->B, kf->u, &n_u, kf->R );
+    filter_kalman_predict_( &n_x, &n_u,
+                            kf->x, kf->A, kf->B, kf->u,
+                            kf->E, kf->R );
 }
 void filter_kalman_correct( filter_kalman_t *kf ) {
     int n_x = (int)kf->n_x;
     int n_z = (int)kf->n_z;
-    filter_kalman_correct_( kf->x, &n_x, kf->E, 
-                            kf->z, &n_z, kf->C, kf->Q );
+    //FIXME: should do something reasonable when 
+    //       matrix inversion fails
+    filter_kalman_correct_( &n_x, &n_z,
+                            kf->x, kf->C, kf->z,
+                            kf->E, kf->Q );
+                           
 }
