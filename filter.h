@@ -37,18 +37,20 @@
 
 #ifndef FILTER_H
 #define FILTER_H
-
+/** \file filter.h
+ * \author Neil T. Dantam
+ */ 
 /*-------------------------*/
 /* Finite Impulse Response */
 /*-------------------------*/
 
 /// Finite Impulse Response Filter
 typedef struct {
-    double *X;
-    double *b;
-    size_t n;
-    size_t i;
-    size_t order;
+    double *X;     ///< state history
+    double *b;     ///< gains
+    size_t n;      ///< space
+    size_t i;      ///< modular index into X
+    size_t order;  ///< length of b
 } filter_fir_t;
 
 /// Finite Impulse Response filter a scalar value
@@ -91,5 +93,86 @@ void filter_kalman_predict( filter_kalman_t *kf );
 /// Correct step
 void filter_kalman_correct( filter_kalman_t *kf );
 
+
+/** Kalman filter with some strong assumptions.
+ * - \f$n_x = n_z\f$
+ * - A = C = I
+ * - E, Q, R are diagonal
+ *
+ * This let's us run in \f$O(n_x + n_xn_u)\f$ instead of \f$O({n_x}^2
+ * + n_xn_u + {n_z}^{2.4})\f$.  We avoid the \f${n_x}^2\f$ term by not
+ * doing multiplication \f$Ax\f$ and we avoid the \f${n_z}^{2.4}\f$
+ * term by computing the inverse of a diagonal matrix in \f$O(n_x)\f$
+ * as simply the scalar inverse of each diagonal element.
+ * 
+ */
+typedef struct {
+    size_t n_x; ///< state space
+    size_t n_u; ///< input space
+    double *x;  ///< state estimate
+    double *u;  ///< input
+    double *z;  ///< measurement
+    double *B;  ///< motion model
+    double *E;  ///< variances
+    double *Q;  ///< Measurement noise
+    double *R;  ///< Process noise
+} filter_kalman_simple_t;
+
+
+/// Allocate all the arrays
+void filter_kalman_simple_init( filter_kalman_simple_t *kf, size_t n_x, size_t n_u );
+
+/// Free all the arrays
+void filter_kalman_simple_destroy( filter_kalman_simple_t *kf );
+
+/// Predict step
+void filter_kalman_simple_predict( filter_kalman_simple_t *kf );
+
+/// Correct step
+void filter_kalman_simple_correct( filter_kalman_simple_t *kf );
+
+/*-----------------*/
+/* Particle Filter */
+/*-----------------*/
+
+// Warning! this is completely untested!
+
+
+/// particle filter motion model function
+typedef void (*filter_particle_motion_fun)( void *env, 
+                                            size_t n_x, double *restrict x1, const double *x0,
+                                            size_t n_u, const double *u );
+
+/// particle filter measurement model function
+typedef double (*filter_particle_measure_fun)( void *env, 
+                                               size_t n_x, const double *x, 
+                                               size_t n_z, const double *z );
+                                          
+/// particle filter struct
+typedef struct {
+    size_t n_x;  ///< state space
+    size_t n_u;  ///< input space
+    size_t n_z;  ///< measurement space
+    size_t n_p;  ///< particle count
+    double *X;   ///< particles
+    double *Xp;  ///< particles
+    double *u;   ///< input
+    double *z;   ///< measurement
+    double *w;   ///< weights
+    filter_particle_motion_fun motion;  ///< motion model
+    filter_particle_measure_fun measure; ///< measurement model
+} filter_particle_t;
+
+/// init particle filter
+void filter_particle_init( filter_particle_t *pf, 
+                           size_t n_x, size_t n_u, size_t n_z, size_t n_p,
+                           filter_particle_motion_fun motion,
+                           filter_particle_measure_fun measure );
+/// run particle filter
+void filter_particle( filter_particle_t *pf, double rand,
+                      void *motion_env, void *measure_env );
+
+/// destroy particle filter
+void filter_particle_destroy( filter_particle_t *pf );
 
 #endif

@@ -36,12 +36,13 @@
 
 Subroutine filter_kalman_predict( n_x, n_u, x, A, B, u, E, R ) 
   Implicit None
-  real(8), intent(inout), dimension(n_x) :: x       ! mean state
-  real(8), intent(inout), dimension(n_x,n_x) :: E   ! covariance
-  real(8), intent(in), dimension(n_x,n_x) :: A, R   ! process/noise model
-  real(8), intent(in), dimension(n_x,n_u) :: B      ! input model
-  real(8), intent(in), dimension(n_u) :: u          ! input
-  integer,  intent(in) :: n_x, n_u                  ! state/input space
+  integer, intent(in) :: n_x, n_u                  ! state/input space
+  real(8), intent(inout), dimension(n_x) :: x      ! mean state
+  real(8), intent(in), dimension(n_x,n_x) :: A     ! process model
+  real(8), intent(in), dimension(n_x,n_u) :: B     ! input model
+  real(8), intent(in), dimension(n_u) :: u         ! input
+  real(8), intent(inout), dimension(n_x,n_x) :: E  ! covariance
+  real(8), intent(in), dimension(n_x,n_x) ::  R    ! noise model
   ! x = A*x + B*u
   x = matmul(A,x) + matmul(B,u)
   ! E = A * E * A**T + R
@@ -61,13 +62,13 @@ Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
   integer, intent(in) :: n_x, n_z                  ! state, measurement space
   real(8), intent(inout), dimension(n_x) :: x      ! state
   real(8), intent(in), dimension(n_z) :: z         ! measurement
-  real(8), intent(inout), dimension(n_x, n_x) :: E !covariance
   real(8), intent(in), dimension(n_z, n_x) :: C    ! measurement model
+  real(8), intent(inout), dimension(n_x, n_x) :: E ! covariance
   real(8), intent(in), dimension(n_z, n_z) :: Q    ! measurement noise
   integer :: info
 
   real(8), dimension( n_x, n_z ) :: K
-  real(8), dimension( n_x, n_x ) :: Kp
+  real(8), dimension( n_z, n_z ) :: Kp
   real(8), dimension( n_x, n_x ) :: Ident
   integer :: i
 

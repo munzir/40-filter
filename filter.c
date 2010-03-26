@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <somatic/util.h>
+#include <cblas.h>
 #include "filter.h"
 
 /*-------------------------*/
@@ -128,4 +129,128 @@ void filter_kalman_correct( filter_kalman_t *kf ) {
                             kf->x, kf->C, kf->z,
                             kf->E, kf->Q );
                            
+}
+
+/*---------------*/
+/* Simple Kalman */
+/*---------------*/
+
+void filter_kalman_simple_init( filter_kalman_simple_t *kf, size_t n_x, size_t n_u ) {
+    kf->n_x = n_x;
+    kf->n_u = n_u;
+    kf->x = SOMATIC_NEW_AR( double, n_x );
+    kf->z = SOMATIC_NEW_AR( double, n_x );
+    kf->u = SOMATIC_NEW_AR( double, n_u );
+    kf->B = SOMATIC_NEW_AR( double, n_x*n_u );
+    kf->E = SOMATIC_NEW_AR( double, n_x );
+    kf->Q = SOMATIC_NEW_AR( double, n_x );
+    kf->R = SOMATIC_NEW_AR( double, n_x );
+}
+
+void filter_kalman_simple_destroy( filter_kalman_simple_t *kf ) {
+    free( kf->x );
+    free( kf->z );
+    free( kf->u );
+    free( kf->B );
+    free( kf->E );
+    free( kf->Q );
+    free( kf->R );
+}
+
+void filter_kalman_simple_predict( filter_kalman_simple_t *kf ) {
+    // x = Ix + Bx
+    cblas_dgemv( CblasColMajor, CblasNoTrans,
+                 (int)kf->n_u, (int)kf->n_x,
+                 1.0, kf->B, (int)kf->n_x,
+                 kf->u, 1,
+                 1.0, kf->x, 1 );
+    // E = I E I**T + R
+    cblas_daxpy( (int)kf->n_x, 
+                 1.0, kf->R, 1,
+                 kf->E, 1 );
+                
+}
+
+void filter_kalman_simple_correct( filter_kalman_simple_t *kf ) {
+    for( size_t i = 0; i < kf->n_x; i ++ ) {
+        double k = kf->E[i] / (kf->E[i] + kf->Q[i]);
+        kf->x[i] += k * (kf->z[i] - kf->x[i]);
+        kf->E[i] *= (1.0 - k);
+    }
+}
+
+/*-----------------*/
+/* Particle Filter */
+/*-----------------*/
+
+void filter_particle_init( filter_particle_t *pf, 
+                           size_t n_x, size_t n_u, size_t n_z, size_t n_p,
+                           filter_particle_motion_fun motion,
+                           filter_particle_measure_fun measure ) {
+    pf->n_x = n_x;
+    pf->n_p = n_p;
+    pf->n_u = n_u;
+
+    pf->X = SOMATIC_NEW_AR( double, n_x*n_p );
+    pf->u = SOMATIC_NEW_AR( double, n_u );
+    pf->z = SOMATIC_NEW_AR( double, n_z );
+    pf->w = SOMATIC_NEW_AR( double, n_x );
+
+    pf->motion = motion;
+    pf->measure = measure;
+}
+
+void filter_particle( filter_particle_t *pf, double r,
+                      void *motion_env, void *measure_env ) {
+    // run motion model
+    for( size_t i = 0; i < pf->n_p; i ++ ) {
+        pf->motion( motion_env, 
+                    pf->n_x, &pf->Xp[i*pf->n_x],
+                    &pf->X[i*pf->n_x], pf->n_u, pf->u );
+                    
+    }
+
+    // find measurement probability
+    size_t i_ml = 0;
+    double p_ml = -1;
+    for( size_t i = 0; i < pf->n_p; i ++ ) {
+        double p = pf->measure( measure_env, 
+                                pf->n_x, & pf->Xp[i*pf->n_x],
+                                pf->n_z, pf->z );
+        pf->w[i] = p;
+        // find most likely estimate
+        if( p > p_ml ) {
+            p_ml = p;
+            i_ml = i;
+        }
+    }
+
+    // normalize weights: w /= sum(w)
+    cblas_dscal( (int)pf->n_p, 
+                 1.0 / cblas_dasum( (int)pf->n_p, pf->w, 1 ),
+                 pf->w, 1 );
+
+    // resample (low variance sampler)
+    {
+        double c = pf->w[0];
+        size_t j = 0; // index into Xp
+        for( size_t i = 0; i < pf->n_p; i ++ ) {
+            // probablity point for the next sample
+            double u = r + i * 1.0 / pf->n_p;
+            // find the j in w corresponding to u
+            while( u > c ) {
+                j++;
+                c += pf->w[j];
+            }
+            // copy the sample in Xp back to our particle buffer X
+            somatic_realcpy( &pf->X[ i*pf->n_x ], &pf->Xp[ j*pf->n_x ], pf->n_x );
+        }
+    }
+}
+
+void filter_particle_destroy( filter_particle_t *pf ) {
+    free( pf->X );
+    free( pf->u );
+    free( pf->z );
+    free( pf->w );
 }

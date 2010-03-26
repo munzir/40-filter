@@ -22,7 +22,10 @@ default: $(LIBFILES) $(BINFILES)
 
 $(call LINKLIB, filter, filter.o kalman.o)
 
-.PHONY: default clean
+.PHONY: default clean doc
+
+doc:
+	doxygen
 
 clean:
 	rm -fr *.o $(BINFILES) $(LIBFILES) *.o .dep debian *.deb *.lzma
