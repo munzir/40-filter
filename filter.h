@@ -37,6 +37,17 @@
 
 #ifndef FILTER_H
 #define FILTER_H
+
+#ifdef __cplusplus
+#define FILTER_RESTRICT 
+#else
+#define FILTER_RESTRICT  restrict
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** \file filter.h
  * \author Neil T. Dantam
  */ 
@@ -140,7 +151,8 @@ void filter_kalman_simple_correct( filter_kalman_simple_t *kf );
 
 /// particle filter motion model function
 typedef void (*filter_particle_motion_fun)( void *env, 
-                                            size_t n_x, double *restrict x1, const double *x0,
+                                            size_t n_x, double *FILTER_RESTRICT x1, 
+                                            const double *x0,
                                             size_t n_u, const double *u );
 
 /// particle filter measurement model function
@@ -175,4 +187,9 @@ void filter_particle( filter_particle_t *pf, double rand,
 /// destroy particle filter
 void filter_particle_destroy( filter_particle_t *pf );
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif
+
