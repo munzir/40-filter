@@ -101,6 +101,9 @@ void filter_kalman_destroy( filter_kalman_t *kf );
 /// Predict step
 void filter_kalman_predict( filter_kalman_t *kf );
 
+/// Predict step with euler approximation
+void filter_kalman_predict_euler( filter_kalman_t *kf, double dt );
+
 /// Correct step
 void filter_kalman_correct( filter_kalman_t *kf );
 

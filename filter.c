@@ -120,6 +120,31 @@ void filter_kalman_predict( filter_kalman_t *kf ) {
                             kf->x, kf->A, kf->B, kf->u,
                             kf->E, kf->R );
 }
+
+
+void filter_kalman_predict_euler( filter_kalman_t *kf, double dt ) {
+    int n_x = (int)kf->n_x;
+    int n_u = (int)kf->n_u;
+    double A_c[n_x*n_x];
+    double B_c[n_x*n_u];
+   
+    // A_c := (I + dt*A)
+    somatic_la_ident( A_c, kf->n_x );
+    cblas_daxpy( n_x*n_x, dt, 
+                 kf->A, 1,
+                 A_c, 1 );
+
+    // B_c := dt*B
+    somatic_realset( B_c, 0, kf->n_x*kf->n_u );
+    cblas_daxpy( n_x*n_u, dt, 
+                 kf->B, 1,
+                 B_c, 1 );
+
+    filter_kalman_predict_( &n_x, &n_u,
+                            kf->x, A_c, B_c, kf->u,
+                            kf->E, kf->R );
+}
+
 void filter_kalman_correct( filter_kalman_t *kf ) {
     int n_x = (int)kf->n_x;
     int n_z = (int)kf->n_z;
