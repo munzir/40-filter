@@ -74,7 +74,7 @@ Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
 
   ! K = E * C**T * (C * E * C**T + Q)**-1
   Kp = matmul( matmul(C, E), transpose(C) ) + Q
-  info = somatic_la_invert(n_x, n_x, Kp)
+  info = somatic_la_invert(n_z, n_z, Kp)
   K = matmul( matmul(E, transpose(C)), Kp )
 
   ! x = x + K * (z - C*x)
