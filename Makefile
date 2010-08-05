@@ -15,8 +15,8 @@ all: default
 include /usr/share/make-common/common.1.mk
 
 #CFLAGS += -O0 -Wno-conversion
-CFLAGS += --std=gnu99
-FFLAGS += -I/usr/include
+CFLAGS += --std=gnu99 -fPIC
+FFLAGS += -I/usr/include -fPIC
 
 default: $(LIBFILES) $(BINFILES)
 

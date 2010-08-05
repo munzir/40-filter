@@ -51,13 +51,13 @@ End Subroutine filter_kalman_predict
 
 Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
   Implicit None
-  !! interface to inversion function (via lapack) in somatic
+  !! interface to inversion function (via lapack) in amino
   Interface
-     Function somatic_la_invert( m, n, A ) result(info)
-       integer, intent(in) :: m, n
-       real(8), dimension(m,n), intent(inout) :: A
+     Function aa_la_inv( n, A ) result(info)
+       integer, intent(in) :: n
+       real(8), dimension(n,n), intent(inout) :: A
        integer :: info
-     End Function somatic_la_invert
+     End Function aa_la_inv
   End Interface
   integer, intent(in) :: n_x, n_z                  ! state, measurement space
   real(8), intent(inout), dimension(n_x) :: x      ! state
@@ -74,7 +74,7 @@ Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
 
   ! K = E * C**T * (C * E * C**T + Q)**-1
   Kp = matmul( matmul(C, E), transpose(C) ) + Q
-  info = somatic_la_invert(n_z, n_z, Kp)
+  info = aa_la_inv(n_z, Kp)
   K = matmul( matmul(E, transpose(C)), Kp )
 
   ! x = x + K * (z - C*x)

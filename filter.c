@@ -35,10 +35,7 @@
  */
 
 
-#include <stdlib.h>
-#include <assert.h>
-#include <somatic/util.h>
-#include <cblas.h>
+#include <amino.h>
 #include "filter.h"
 
 /*-------------------------*/
@@ -86,17 +83,17 @@ void filter_kalman_init( filter_kalman_t *kf, size_t n_x, size_t n_u, size_t n_z
     kf->n_u = n_u;
     kf->n_z = n_z;
 
-    kf->x = SOMATIC_NEW_AR( double, n_x );
-    kf->u = SOMATIC_NEW_AR( double, n_u );
-    kf->z = SOMATIC_NEW_AR( double, n_z );
+    kf->x = AA_NEW0_AR( double, n_x );
+    kf->u = AA_NEW0_AR( double, n_u );
+    kf->z = AA_NEW0_AR( double, n_z );
 
-    kf->A = SOMATIC_NEW_AR( double, n_x*n_x );
-    kf->B = SOMATIC_NEW_AR( double, n_x*n_u );
-    kf->C = SOMATIC_NEW_AR( double, n_z*n_x );
+    kf->A = AA_NEW0_AR( double, n_x*n_x );
+    kf->B = AA_NEW0_AR( double, n_x*n_u );
+    kf->C = AA_NEW0_AR( double, n_z*n_x );
 
-    kf->E = SOMATIC_NEW_AR( double, n_x*n_x );
-    kf->R = SOMATIC_NEW_AR( double, n_x*n_x );
-    kf->Q = SOMATIC_NEW_AR( double, n_z*n_z );
+    kf->E = AA_NEW0_AR( double, n_x*n_x );
+    kf->R = AA_NEW0_AR( double, n_x*n_x );
+    kf->Q = AA_NEW0_AR( double, n_z*n_z );
 }
 
 void filter_kalman_destroy( filter_kalman_t *kf ) {
@@ -130,19 +127,19 @@ void filter_kalman_predict_euler( filter_kalman_t *kf, double dt ) {
     double R_c[n_x*n_x];
    
     // A_c := (I + dt*A)
-    somatic_la_ident( A_c, kf->n_x );
+    aa_la_ident( kf->n_x, A_c );
     cblas_daxpy( n_x*n_x, dt, 
                  kf->A, 1,
                  A_c, 1 );
 
     // B_c := dt*B
-    somatic_realset( B_c, 0, kf->n_x*kf->n_u );
+    aa_fset( B_c, 0, kf->n_x*kf->n_u );
     cblas_daxpy( n_x*n_u, dt, 
                  kf->B, 1,
                  B_c, 1 );
 
     // R_c := dt^2 * R
-    somatic_realset( R_c, 0, kf->n_x*kf->n_x );
+    aa_fset( R_c, 0, kf->n_x*kf->n_x );
     cblas_daxpy( n_x*n_x, dt*dt, 
                  kf->R, 1,
                  R_c, 1 );
@@ -170,13 +167,13 @@ void filter_kalman_correct( filter_kalman_t *kf ) {
 void filter_kalman_simple_init( filter_kalman_simple_t *kf, size_t n_x, size_t n_u ) {
     kf->n_x = n_x;
     kf->n_u = n_u;
-    kf->x = SOMATIC_NEW_AR( double, n_x );
-    kf->z = SOMATIC_NEW_AR( double, n_x );
-    kf->u = SOMATIC_NEW_AR( double, n_u );
-    kf->B = SOMATIC_NEW_AR( double, n_x*n_u );
-    kf->E = SOMATIC_NEW_AR( double, n_x );
-    kf->Q = SOMATIC_NEW_AR( double, n_x );
-    kf->R = SOMATIC_NEW_AR( double, n_x );
+    kf->x = AA_NEW0_AR( double, n_x );
+    kf->z = AA_NEW0_AR( double, n_x );
+    kf->u = AA_NEW0_AR( double, n_u );
+    kf->B = AA_NEW0_AR( double, n_x*n_u );
+    kf->E = AA_NEW0_AR( double, n_x );
+    kf->Q = AA_NEW0_AR( double, n_x );
+    kf->R = AA_NEW0_AR( double, n_x );
 }
 
 void filter_kalman_simple_destroy( filter_kalman_simple_t *kf ) {
@@ -223,10 +220,10 @@ void filter_particle_init( filter_particle_t *pf,
     pf->n_p = n_p;
     pf->n_u = n_u;
 
-    pf->X = SOMATIC_NEW_AR( double, n_x*n_p );
-    pf->u = SOMATIC_NEW_AR( double, n_u );
-    pf->z = SOMATIC_NEW_AR( double, n_z );
-    pf->w = SOMATIC_NEW_AR( double, n_x );
+    pf->X = AA_NEW0_AR( double, n_x*n_p );
+    pf->u = AA_NEW0_AR( double, n_u );
+    pf->z = AA_NEW0_AR( double, n_z );
+    pf->w = AA_NEW0_AR( double, n_x );
 
     pf->motion = motion;
     pf->measure = measure;
@@ -268,14 +265,14 @@ void filter_particle( filter_particle_t *pf, double r,
         size_t j = 0; // index into Xp
         for( size_t i = 0; i < pf->n_p; i ++ ) {
             // probablity point for the next sample
-            double u = r + i * 1.0 / pf->n_p;
+            double u = r + (double)i * 1.0 / (double)pf->n_p;
             // find the j in w corresponding to u
             while( u > c ) {
                 j++;
                 c += pf->w[j];
             }
             // copy the sample in Xp back to our particle buffer X
-            somatic_realcpy( &pf->X[ i*pf->n_x ], &pf->Xp[ j*pf->n_x ], pf->n_x );
+            aa_fcpy( &pf->X[ i*pf->n_x ], &pf->Xp[ j*pf->n_x ], pf->n_x );
         }
     }
 }
