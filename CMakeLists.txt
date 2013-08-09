@@ -18,8 +18,14 @@ set(CMAKE_C_FLAGS --std=gnu99)
 # in /usr/lib or /usr/local/lib
 link_libraries(ach somatic ntcan ntcanopen amino)
 
+# Compile the fortran file
+add_custom_command(
+	OUTPUT kalman.o
+	COMMAND gfortran -c ../kalman.f90
+)
+
 # Add the library
-add_library(filter SHARED filter.c)
+add_library(filter SHARED filter.c kalman.o)
 
 # Install it
 install(FILES filter.h DESTINATION /usr/local/include)
