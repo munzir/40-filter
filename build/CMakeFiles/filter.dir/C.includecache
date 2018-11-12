@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.c
+amino.h
+-
+filter.h
+/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.h
+
+/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.h
+
