@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,11 +6,11 @@
 
 #IncludeRegexTransform: 
 
-/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.c
+/home/mouhyemen/desktop/software/40-filter/filter.c
 amino.h
 -
 filter.h
-/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.h
+/home/mouhyemen/desktop/software/40-filter/filter.h
 
-/home/munzir/Me/5-Work/01-PhD/01-WholeBodyControlAttempt1/40-filter/filter.h
+/home/mouhyemen/desktop/software/40-filter/filter.h
 

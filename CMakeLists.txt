@@ -13,6 +13,7 @@ endif()
 # Set the C99 standard for the C files
 set(CMAKE_C_FLAGS --std=gnu99)
 
+
 # Link to somatic, amino and ach
 # NOTE: Ideally we would like to 'find' these packages but for now, we assume they are either 
 # in /usr/lib or /usr/local/lib
@@ -21,7 +22,7 @@ link_libraries(ach somatic amino)
 # Compile the fortran file
 add_custom_command(
 	OUTPUT kalman.o
-	COMMAND gfortran -c ../kalman.f90
+	COMMAND gfortran -c ../kalman.f90 -fPIC
 )
 
 # Add the library
