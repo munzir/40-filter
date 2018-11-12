@@ -1,2 +1,0 @@
-/usr/local/include/filter.h
-/usr/local/lib/libfilter.so
