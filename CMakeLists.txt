@@ -16,7 +16,7 @@ set(CMAKE_C_FLAGS --std=gnu99)
 # Link to somatic, amino and ach
 # NOTE: Ideally we would like to 'find' these packages but for now, we assume they are either 
 # in /usr/lib or /usr/local/lib
-link_libraries(ach somatic ntcan ntcanopen amino)
+link_libraries(ach somatic amino)
 
 # Compile the fortran file
 add_custom_command(
