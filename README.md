@@ -7,7 +7,7 @@ Kalman filter library
 
 ## Installation
 
-  mkdir build
-  cd build
-  cmake ..
-  sudo make install
+    mkdir build
+    cd build
+    cmake ..
+    sudo make install
