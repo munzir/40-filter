@@ -34,7 +34,7 @@
 !! \brief kalman filter
 !! \author Neil T. Dantam
 
-Subroutine filter_kalman_predict( n_x, n_u, x, A, B, u, E, R ) 
+Subroutine filter_kalman_predict( n_x, n_u, x, A, B, u, E, R )
   Implicit None
   integer, intent(in) :: n_x, n_u                  ! state/input space
   real(8), intent(inout), dimension(n_x) :: x      ! mean state
@@ -80,7 +80,7 @@ Function filter_kalman_correct(n_x, n_z, x, C, z, E, Q ) result(info)
   ! x = x + K * (z - C*x)
   x = x + matmul( K, z - matmul(C,x) )
 
-  ! E = (I - K*C) * E 
+  ! E = (I - K*C) * E
   Ident = 0
   Forall ( i = 1:n_x )
      Ident(i,i) = 1

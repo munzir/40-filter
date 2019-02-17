@@ -1,9 +1,10 @@
 # 40-filter
-Kalman filter library 
+Kalman filter library
 
 ## Dependencies
-- Fortran Compiler
-`sudo apt install gfortran`
+- `gfortran`
+
+    sudo apt install gfortran
 
 ## Installation
 
@@ -11,3 +12,8 @@ Kalman filter library
     cd build
     cmake ..
     sudo make install
+
+## Uninstall
+To remove system files created by the installation of this repo.
+
+    sudo make uninstall

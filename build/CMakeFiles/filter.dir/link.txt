@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC --std=gnu99  -shared -Wl,-soname,libfilter.so -o libfilter.so CMakeFiles/filter.dir/filter.c.o kalman.o -lach -lsomatic -lamino 
