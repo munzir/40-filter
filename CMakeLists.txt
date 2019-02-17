@@ -15,7 +15,7 @@ set(CMAKE_C_FLAGS --std=gnu99)
 
 
 # Link to somatic, amino and ach
-# NOTE: Ideally we would like to 'find' these packages but for now, we assume they are either 
+# NOTE: Ideally we would like to 'find' these packages but for now, we assume they are either
 # in /usr/lib or /usr/local/lib
 link_libraries(ach somatic amino)
 
@@ -37,7 +37,7 @@ install(TARGETS filter DESTINATION /usr/local/lib)
 set(CPACK_PACKAGE_NAME "filter")
 set(CPACK_SYSTEM_NAME "i386")
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set(CPACK_SYSTEM_NAME "amd64")    
+    set(CPACK_SYSTEM_NAME "amd64")
 endif()
 set(CPACK_PACKAGE_VERSION_MAJOR ${FILTER_MAJOR_VERSION})
 set(CPACK_PACKAGE_VERSION_MINOR ${FILTER_MINOR_VERSION})
@@ -49,3 +49,14 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Neil Dantam <ntd@gatech.edu>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "This library contains filtering functions such as kalman and particle filters")
 set(CPACK_PACKAGE_VENDOR "Georgia Tech Humanoids Lab")
 include(CPack)
+
+# uninstall target
+if(NOT TARGET uninstall)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
+
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
