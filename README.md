@@ -4,7 +4,7 @@ Kalman filter library
 ## Dependencies
 - `gfortran`
 
-    sudo apt install gfortran
+      sudo apt install gfortran
 
 ## Installation
 
